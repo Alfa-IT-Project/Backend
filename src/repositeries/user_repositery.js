@@ -3,13 +3,13 @@ import {Prisma, PrismaClient} from '@prisma/client';
 const prisma = new PrismaClient();
 
 
-async function saveUser(credientials) {
+async function saveUser(credentials) {
     try{
         const result = await prisma.user.create({
             data: {
-                username : credientials.username,
-                email: credientials.email,
-                password: credientials.hashedPassword
+                username : credentials.username,
+                email: credentials.email,
+                password: credentials.hashedPassword
             }
         })
       return result;
@@ -34,6 +34,27 @@ async function getUserByUsername(username) {
     
 }
 
+async function getUserProfile(userId) {
+    try {
+        console.log(`getUserProfile called with userId: ${userId}`);
+        const user = await prisma.user.findUnique({
+            where: { id:userId }, 
+            select: {
+                username: true,
+                email: true,
+                role: true,
+                created_at: true, // Assuming createdAt is the column name
+            },
+        });
+        
+        console.log(`getUserProfile query result:`, user);
+        return user; // Return user data if found
+    } catch (err) {
+        throw err;
+    }
+}
 
-export {saveUser, getUserByUsername};
+
+
+export {saveUser, getUserByUsername, getUserProfile};
 

@@ -7,9 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model user {
+model User {
   id       Int    @id @default(autoincrement())
   username String @db.VarChar(50) @unique
   email    String @db.VarChar(100) @unique
   password String @db.VarChar(255)
+  role     String @default("sales") // No enum directive
+  created_at DateTime @default(now())
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String   @db.VarChar(255)
+  phone     String   @db.VarChar(50)
+  address   String   @db.Text
+  company   String   @db.VarChar(255)
+  status    String   @default("active") // You can add application-level validation if needed
+  created_at DateTime @default(now())
 }
