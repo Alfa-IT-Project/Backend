@@ -6,23 +6,61 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+enum Role {
+    general_manager
+    customer
+}
 
 model User {
-  id       Int    @id @default(autoincrement())
-  username String @db.VarChar(50) @unique
-  email    String @db.VarChar(100) @unique
-  password String @db.VarChar(255)
-  role     String @default("sales") // No enum directive
-  created_at DateTime @default(now())
+    id        Int     @id @default(autoincrement())
+    username  String  @unique
+    password  String
+    name      String  @default("Unknown")
+    email     String  @unique
+    phone     String?
+    address   String?
+    role      Role
+
+    customer  Customer?
 }
 
 model Customer {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(255)
-  email     String   @db.VarChar(255)
-  phone     String   @db.VarChar(50)
-  address   String   @db.Text
-  company   String   @db.VarChar(255)
-  status    String   @default("active") // You can add application-level validation if needed
-  created_at DateTime @default(now())
+    id          Int      @id @map("user_id")
+    notes       String?
+    
+    purchases   Purchase[]
+
+    user        User     @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model Purchase {
+    purchase_id      Int       @id @default(autoincrement())
+    user_id          Int       // FK referencing User (Customer ID)
+    total_amount     Decimal   @db.Decimal(10,2)
+    shipping_fee     Decimal   @db.Decimal(10,2)
+    grand_total      Decimal   @db.Decimal(10,2)
+    order_date       DateTime
+    warranty_details String?
+
+    customer         Customer  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    promotions       Promotion[]
+    warranty         Warranty?
+}
+
+model Warranty {
+    warranty_id  Int      @id @default(autoincrement())
+    purchase_id  Int      @unique
+    expiry_date  DateTime
+
+    purchase     Purchase @relation(fields: [purchase_id], references: [purchase_id], onDelete: Cascade)
+}
+
+model Promotion {
+    promotion_id Int      @id @default(autoincrement())
+    purchase_id  Int
+    promo_code   String
+    discount     Decimal  @db.Decimal(10,2)
+    expiry_date  DateTime
+
+    purchase     Purchase @relation(fields: [purchase_id], references: [purchase_id], onDelete: Cascade)
 }

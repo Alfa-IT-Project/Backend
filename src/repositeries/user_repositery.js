@@ -8,10 +8,18 @@ async function saveUser(credentials) {
         const result = await prisma.user.create({
             data: {
                 username : credentials.username,
+                password: credentials.hashedPassword,
+                name: credentials.name, 
                 email: credentials.email,
-                password: credentials.hashedPassword
+                phone:credentials.phone,
+                address:credentials.address,
+                role: credentials.role,
+                customer: {
+                    create: {} 
+                }
             }
         })
+        console.log(`saveUser query result:`, result);
       return result;
     }
     catch(err){
@@ -41,19 +49,57 @@ async function getUserProfile(userId) {
             where: { id:userId }, 
             select: {
                 username: true,
+                name: true,
                 email: true,
+                phone: true,
+                address: true,
                 role: true,
-                created_at: true, // Assuming createdAt is the column name
+                customer: {
+                    select: {
+                        notes: true,
+                    },
+                }
             },
         });
         
-        console.log(`getUserProfile query result:`, user);
+       // console.log(`getUserProfile query result:`, user);
         return user; // Return user data if found
     } catch (err) {
         throw err;
     }
 }
 
+// async function getUserProfile(userId) {
+//     try {
+//         console.log(`getUserProfile called with userId: ${userId}`);
+
+//         const user = await prisma.user.findUnique({
+//             where: { id: userId },
+//             select: {
+//                 id: true,
+//                 username: true,
+//                 email: true,
+//                 role: true,
+//                 customer: {
+//                     select: {
+//                         notes: true,
+//                     },
+//                 },
+//             },
+//         });
+
+//         if (!user) {
+//             console.log(`User with ID ${userId} not found.`);
+//             return { error: "User not found" };
+//         }
+
+//         console.log(`getUserProfile query result:`, user);
+//         return user; 
+//     } catch (err) {
+//         console.error("Error fetching user profile:", err);
+//         throw new Error("Failed to retrieve user profile");
+//     }
+// }
 
 
 export {saveUser, getUserByUsername, getUserProfile};

@@ -14,6 +14,7 @@ router.post('/register',async function(req, res, next) {
 
     if(result) {
         res.send('User created successfully');
+        console.log("User Profile Data:", result);
     }
    }catch(err){
        if (err instanceof Prisma.PrismaClientKnownRequestError){
@@ -43,7 +44,7 @@ router.post('/login', async function(req, res, next) {
 });
 
 // Protected route for getting user profile
-router.get('/:id/profile', authenticateToken, async (req, res) => {
+router.get('/:id/profile', authenticateToken(['customer', 'general_manager']), async (req, res) => {
     try {
         const userId = req.user.id; // Extract user ID from token
 
@@ -64,34 +65,34 @@ router.get('/:id/profile', authenticateToken, async (req, res) => {
     }
 });
 
-app.get('/:userId/profile', authenticateToken, async (req, res) => {
-    const userId = req.params.userId;
+// app.get('/:userId/profile', authenticateToken, async (req, res) => {
+//     const userId = req.params.userId;
     
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
-    }
+//     if (!userId) {
+//       return res.status(400).json({ message: 'User ID is required' });
+//     }
   
-    const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+//     const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
   
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
   
-    res.json(user);
-  });
+//     res.json(user);
+//   });
   
-  // Middleware to check token
-  function authenticateToken(req, res, next) {
-    const token = req.header('Authorization')?.split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Access Denied' });
+//   // Middleware to check token
+//   function authenticateToken(req, res, next) {
+//     const token = req.header('Authorization')?.split(' ')[1];
+//     if (!token) return res.status(401).json({ message: 'Access Denied' });
   
-    try {
-      const verified = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = verified;
-      next();
-    } catch (err) {
-      res.status(403).json({ message: 'Invalid Token' });
-    }
-  }
+//     try {
+//       const verified = jwt.verify(token, process.env.JWT_SECRET);
+//       req.user = verified;
+//       next();
+//     } catch (err) {
+//       res.status(403).json({ message: 'Invalid Token' });
+//     }
+//   }
 
 export default router;

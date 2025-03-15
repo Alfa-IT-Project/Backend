@@ -1,5 +1,6 @@
 import express from 'express';
 import user_routers from './routers/user_controller.js';
+import customer_routers from './routers/customer_controller.js';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import exp from 'constants';
@@ -25,5 +26,6 @@ app.use(cookieParser());
 app.use(logger('dev'));
 
 app.use('/users', user_routers);
+app.use('/customers', customer_routers);
 
 export default app;
