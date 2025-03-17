@@ -1,7 +1,7 @@
 import {saveUser, getUserByUsername} from '../repositeries/user_repositery.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { UserAuthError } from '../utils/exeption.js';
+//import { UserAuthError } from '../utils/exeption.js';
 
 async function createUser(credentials) {
    try{
