@@ -1,5 +1,5 @@
 import { saveCustomer } from '../repositeries/customer_repositery.js';
-//const { saveCustomer } = require("../repositeries/customer_repositery.js");
+
 import bcrypt from 'bcrypt';
 
 

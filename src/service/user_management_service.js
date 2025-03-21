@@ -60,8 +60,6 @@ function authenticateToken(allowedRoles = []) {
     };
 }
 
-
-
 export {createUser, loginUser, authenticateToken};
 
 

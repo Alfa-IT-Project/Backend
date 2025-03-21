@@ -65,34 +65,4 @@ router.get('/:id/profile', authenticateToken(['customer', 'general_manager']), a
     }
 });
 
-// app.get('/:userId/profile', authenticateToken, async (req, res) => {
-//     const userId = req.params.userId;
-    
-//     if (!userId) {
-//       return res.status(400).json({ message: 'User ID is required' });
-//     }
-  
-//     const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
-  
-//     if (!user) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-  
-//     res.json(user);
-//   });
-  
-//   // Middleware to check token
-//   function authenticateToken(req, res, next) {
-//     const token = req.header('Authorization')?.split(' ')[1];
-//     if (!token) return res.status(401).json({ message: 'Access Denied' });
-  
-//     try {
-//       const verified = jwt.verify(token, process.env.JWT_SECRET);
-//       req.user = verified;
-//       next();
-//     } catch (err) {
-//       res.status(403).json({ message: 'Invalid Token' });
-//     }
-//   }
-
 export default router;

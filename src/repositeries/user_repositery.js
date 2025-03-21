@@ -69,38 +69,5 @@ async function getUserProfile(userId) {
     }
 }
 
-// async function getUserProfile(userId) {
-//     try {
-//         console.log(`getUserProfile called with userId: ${userId}`);
-
-//         const user = await prisma.user.findUnique({
-//             where: { id: userId },
-//             select: {
-//                 id: true,
-//                 username: true,
-//                 email: true,
-//                 role: true,
-//                 customer: {
-//                     select: {
-//                         notes: true,
-//                     },
-//                 },
-//             },
-//         });
-
-//         if (!user) {
-//             console.log(`User with ID ${userId} not found.`);
-//             return { error: "User not found" };
-//         }
-
-//         console.log(`getUserProfile query result:`, user);
-//         return user; 
-//     } catch (err) {
-//         console.error("Error fetching user profile:", err);
-//         throw new Error("Failed to retrieve user profile");
-//     }
-// }
-
-
 export {saveUser, getUserByUsername, getUserProfile};
 

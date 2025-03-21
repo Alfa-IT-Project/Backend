@@ -1,21 +1,34 @@
 import express from "express";
-import { deleteCustomerById, getCustomers } from "../repositeries/customer_repositery.js";
+import { deleteCustomerById, getCustomers, getCustomerPurchases} from "../repositeries/customer_repositery.js";
 import { authenticateToken } from "../service/user_management_service.js";
 import { createCustomer, updateCustomer } from "../service/customer_service.js";
 import { Prisma } from '@prisma/client';
 
 const router = express.Router();
 
-router.get('/getCustomers',authenticateToken(['general_manager']), async (req, res) => {
-   try {
-       const customers = await getCustomers();
-       res.json(customers);
-   }
-   catch(err){
-       console.log(err);
-       res.status(500).send('Internal server error');
-   }
-});
+router.get('/getCustomers', authenticateToken(['general_manager']), async (req, res) => {
+    try {
+        console.log("role", req.user.role);
+        const customers = await getCustomers();
+        res.json(customers);
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send('Internal server error');
+    }
+ });
+
+// router.get('/getPurchasesByCustomerId', authenticateToken(['customer']), async (req, res) => {
+//     try {
+//         const user_id = req.user.user_id;
+//         const purchases = await getCustomerPurchases(user_id);
+//         res.json(purchases);
+//     }
+//     catch(err){
+//         console.log(err);
+//         res.status(500).send('Internal server error');
+//     }
+// });
 
 router.post('/addCustomer', authenticateToken(['general_manager']), async function (req, res) {
     try{
