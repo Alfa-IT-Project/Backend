@@ -8,9 +8,9 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1",
+    "@prisma/client": "^6.5.0",
     "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^16.1.0",
+    "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/bcrypt": "^5.0.2",
     "bcrypt": "^5.1.1",
@@ -22,6 +22,8 @@
     "jade": "~1.11.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "~1.9.1",
+    "pdfkit": "^0.16.0",
+    "twilio": "^5.5.1",
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {

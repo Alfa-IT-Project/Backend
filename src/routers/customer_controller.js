@@ -1,9 +1,10 @@
-import express from "express";
+import express, { response } from "express";
 import { deleteCustomerById, getCustomers, getCustomerPurchases} from "../repositeries/customer_repositery.js";
 import { authenticateToken } from "../service/user_management_service.js";
-import { createCustomer, updateCustomer } from "../service/customer_service.js";
+import { createCustomer , sendSMS} from "../service/customer_service.js";
 import { Prisma } from '@prisma/client';
-
+import { updateCustomerDetails } from '../repositeries/customer_repositery.js';
+import { createUser } from "../service/user_management_service.js";
 const router = express.Router();
 
 router.get('/getCustomers', authenticateToken(['general_manager']), async (req, res) => {
@@ -34,10 +35,13 @@ router.post('/addCustomer', authenticateToken(['general_manager']), async functi
     try{
         const credentials =req.body;
         const result = await createCustomer(credentials);
-
-        if(result){
-            res.send('Customer add successfully');
-        }
+        // // Send SMS with credentials
+        // if (phone) {
+        //    await sendSMS(phone, username, password);
+        // }
+         if(result){
+             res.send('Customer add successfully');
+         }
     }catch(err){
         if (err instanceof Prisma.PrismaClientKnownRequestError){
             if(err.code === 'P2002'){
@@ -47,40 +51,59 @@ router.post('/addCustomer', authenticateToken(['general_manager']), async functi
     }
 });
 
-router.post('/:id/updateCustomer', authenticateToken(['customer', 'general_manager']), async function (req, res, next) {
+// router.post('/:id/updateCustomer', authenticateToken(['customer', 'general_manager']), async function (req, res, next) {
 
-    try{
-        const credentials = req.body;
-        const result = await updateCustomer(credentials);
+//     try{
+//         const credentials = req.body;
+//         console.log("Body", req.body);
+//         const result = await updateCustomer(credentials);
 
-        if(result){
-            res.send('Customer updated successfully');
-        }
-    }catch(err){
-        console.log(err);
-        res.status(500).send('Internal server error');
+//         if(result){
+//             res.send('Customer updated successfully');
+//         }
+//     }catch(err){
+//         console.log(err);
+//         res.status(500).send('Internal server error');
+//     }
+// });
+router.put("/:id/updateCustomer", authenticateToken(['customer', 'general_manager']), async (req, res) => {
+    const customerId = parseInt(req.params.id);  // This is the customer ID from the URL
+    const userId = req.user.id;  // Get the user ID from the JWT token payload
+
+    if (userId !== customerId ) {
+        return res.status(403).json({ message: "You do not have permission to update this customer." });
+    }
+   
+    try {
+        const updatedCustomer = await updateCustomerDetails(customerId, req.body);
+       
+        console.log(updatedCustomer);
+        res.json(updatedCustomer);
+    } catch (error) {
+        console.error(error); 
+        res.status(500).send(error.message);
     }
 });
 
-router.delete('/deleteCustomer', authenticateToken(['general_manager']), async function (req, res) {
+
+router.delete("/:id/deleteCustomer", authenticateToken(['general_manager']), async (req, res) => {
+    const customerId = parseInt(req.params.id); // Get the customerId from the URL
+    const userId = req.user.id; // Get the userId from the JWT token payload
+
+    // Check if the user is authorized to delete this customer
+    if (userId !== customerId && req.user.role !== 'general_manager') {
+        return res.status(403).json({ message: "You do not have permission to delete this customer." });
+    }
+
     try {
-        const { id } = req.body; 
-        console.log(id);
-        if (!id) return res.status(400).send("User ID is required");
+        // Delete the customer and associated user from the database
+        const deletedCustomer = await deleteCustomerById(customerId);
 
-        const result = await deleteCustomerById(parseInt(id));
-
-        if (result) {
-            return res.send(`Customer with ID ${id} deleted successfully`);
-        } else {
-            return res.status(404).send("Customer not found");
-        }
-    } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-            return res.status(404).send("Customer not found");
-        }
-        console.error("Unexpected error:", err);
-        return res.status(500).send("Internal server error");
+        // Respond with a success message
+        res.json({ message: "Customer deleted successfully.", deletedCustomer });
+    } catch (error) {
+        console.error(error);  // Logs the error for debugging
+        res.status(500).send('Error deleting customer: ' + error.message);
     }
 });
 

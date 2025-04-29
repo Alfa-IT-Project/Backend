@@ -44,9 +44,9 @@ router.post('/login', async function(req, res, next) {
 });
 
 // Protected route for getting user profile
-router.get('/:id/profile', authenticateToken(['customer', 'general_manager']), async (req, res) => {
+router.get('/:userId/profile', authenticateToken(['customer', 'general_manager']), async (req, res) => {
     try {
-        const userId = req.user.id; // Extract user ID from token
+        const userId = parseInt(req.params.userId);  // Extract user ID from token
 
         console.log("Authenticated User ID:", userId);  // Log for debugging
 

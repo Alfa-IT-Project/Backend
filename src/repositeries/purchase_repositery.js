@@ -50,6 +50,30 @@ async function getPurchasesByTime() {
     });
     return purchases;
 }
+async function fetchPurchaseData(startDate, endDate) {
+    try {
+      const purchases = await prisma.purchase.groupBy({
+        by: ['order_date'], 
+        _sum: { grand_total: true }, 
+        where: {
+          order_date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: { order_date: 'asc' },
+      });
+  
+      return purchases.map(purchase => ({
+        date: purchase.order_date.toISOString().split('T')[0], 
+        amount: purchase._sum.grand_total ? purchase._sum.grand_total.toNumber() : 0,
+      }));
+    } catch (error) {
+      console.error("Error in fetchPurchaseData:", error);
+      throw error;
+    }
+  }
+  
 // Get purchase by ID with items
 async function getPurchaseByPurchaseId(purchaseId) {
     try {
@@ -108,4 +132,13 @@ async function deletePurchasePerCustomer(purchaseId) {
     }
 }
 
-export { getAllPurchases, getPurchaseByPurchaseId, deletePurchasePerCustomer,getPurchasesByTime };
+const getLastMonthRange = () => {
+    const endDate = new Date(); // Current day
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 1); // Go back 1 month
+  
+    return { startDate, endDate };
+  };
+  
+  
+export { getAllPurchases, getPurchaseByPurchaseId, deletePurchasePerCustomer,getPurchasesByTime, fetchPurchaseData, getLastMonthRange };

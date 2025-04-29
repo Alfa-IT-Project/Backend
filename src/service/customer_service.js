@@ -1,7 +1,12 @@
-import { saveCustomer } from '../repositeries/customer_repositery.js';
+import { saveCustomer , updateCustomerDetails} from '../repositeries/customer_repositery.js';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 import bcrypt from 'bcrypt';
+import twilio from 'twilio';
 
+
+const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
 async function createCustomer(credentials) {
     try {
@@ -24,23 +29,19 @@ async function createCustomer(credentials) {
     }
 }
 
-async function updateCustomer(credentials) {
+
+
+async function sendSMS(phone, username, password) {
     try {
-        const { id, username, email, phone, address, notes } = credentials;
-
-        const result = await saveCustomer({
-            id,
-            username,
-            email,
-            phone,
-            address,
-            notes,
+        await twilioClient.messages.create({
+            body: `Your account has been created. Username: ${username}, Password: ${password}`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: phone,
         });
-
-        return result;
-    } catch (err) {
-        throw err;
+    } catch (error) {
+        console.error("Failed to send SMS:", error);
     }
 }
 
-export { createCustomer , updateCustomer };
+export { createCustomer , sendSMS, };
+
