@@ -194,6 +194,22 @@ Hardware Store`
   });
 });
 
+// ✅ New: Update delivery status
+app.put('/order/status/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const sql = 'UPDATE orders SET deliveryStatus = ? WHERE id = ?';
+  db.query(sql, [status, id], (err, result) => {
+    if (err) {
+      console.error('Failed to update delivery status:', err);
+      res.status(500).send('Error updating status');
+    } else {
+      res.status(200).send('Status updated successfully');
+    }
+  });
+});
+
 // Server listening
 app.listen(5000, () => {
   console.log('Server running on http://localhost:5000');
