@@ -13,6 +13,7 @@ async function createUser(credentials) {
     catch(err){
         throw err;
     }
+    
 }
 
 async function loginUser(credentials) {

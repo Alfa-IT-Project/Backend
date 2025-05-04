@@ -9,6 +9,9 @@ datasource db {
 enum Role {
     general_manager
     customer
+    product_manager
+    delivery_manager
+    driver
 }
 
 model User {
