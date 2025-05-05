@@ -12,6 +12,7 @@ enum Role {
     product_manager
     delivery_manager
     driver
+    supplier_manager
 }
 
 model User {
