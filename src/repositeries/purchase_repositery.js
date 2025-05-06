@@ -5,40 +5,45 @@ const prisma = new PrismaClient();
 // Get all purchases with items
 async function getAllPurchases() {
     try {
-        const purchases = await prisma.purchase.findMany({
+      const purchases = await prisma.purchase.findMany({
+        select: {
+          purchase_id: true,
+          user_id: true,
+          total_amount: true,
+          shipping_fee: true,
+          grand_total: true,
+          order_date: true,
+          items: {
             select: {
-                purchase_id: true,
-                user_id: true,
-                total_amount: true,
-                shipping_fee: true,
-                grand_total: true,
-                order_date: true,
-                items: {
+              item_id: true,
+              quantity: true,
+              item: {
+                select: {
+                  item_id: true,
+                  product_name: true,
+                  price: true,
+                  quantity: true, // stock
+                  category: true,
+                  Warranty: {
                     select: {
-                        item_id: true,
-                        quantity: true,
-                        item: {
-                            select: {
-                                item_id: true,
-                                name: true,
-                                price: true,
-                                stock: true,
-                                image_url: true,
-                                category: true,
-                                warranty_details: true,
-                            }
-                        }
+                      warranty_id: true,
+                      expiry_date: true
                     }
+                  }
                 }
+              }
             }
-        });
-
-        return purchases;
+          }
+        }
+      });
+  
+      return purchases;
     } catch (err) {
-        console.error("Error fetching purchases:", err);
-        throw new Error("Could not retrieve purchases");
+      console.error("Error fetching purchases:", err);
+      throw new Error("Could not retrieve purchases");
     }
-}
+  }
+  
 async function getPurchasesByTime() {
     const purchases = await prisma.purchase.findMany({
         where: {

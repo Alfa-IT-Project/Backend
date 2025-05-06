@@ -5,29 +5,31 @@ const prisma = new PrismaClient();
 
 async function getCustomers() {
     try {
-        const customers = await prisma.customer.findMany({
-            select: { // Use select instead of include
+        const customers = await prisma.user.findMany({
+            where: {
+                role: "customer"
+            },
+            select: {
                 id: true,
-                notes: true, // Now correctly included
-                user: {
+                username: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                role: true,
+                customer: {
                     select: {
                         id: true,
-                        username: true,
-                        name: true,
-                        email: true,
-                        phone: true,
-                        address: true,
-                        role: true,
+                        notes: true
                     }
-                },
-                purchases: true, // Include related purchases
+                }
             }
         });
 
-        return customers; 
+        return customers;
     } catch (err) {
-        console.error("Error fetching customers:", err); 
-        throw new Error("Could not retrieve customers"); 
+        console.error("Error fetching customers:", err);
+        throw new Error("Could not retrieve customers");
     }
 }
 

@@ -1,100 +1,155 @@
 generator client {
   provider = "prisma-client-js"
+  
 }
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-enum Role {
-    general_manager
-    customer
-}
 
 model User {
-    id        Int     @id @default(autoincrement())
-    username  String  @unique
-    password  String
-    name      String  @default("Unknown")
-    email     String  @unique
-    phone     String?
-    address   String?
-    role      Role
-
-    customer  Customer?
+  id       Int       @id @default(autoincrement())
+  username String    @unique
+  email    String    @unique
+  password String
+  role     Role
+  address  String?
+  name     String    @default("Unknown")
+  phone    String?
+  customer Customer?
 }
 
 model Customer {
-    id          Int      @id @map("user_id")
-    notes       String?
-    
-    purchases   Purchase[]
-
-    user        User     @relation(fields: [id], references: [id], onDelete: Cascade)
-    promotions  Promotion[]
+  notes      String?
+  id         Int        @id @map("user_id")
+  pointCount Int        @default(0)
+  tierId     Int?
+  tier       Tier?      @relation(fields: [tierId], references: [id])
+  user       User       @relation(fields: [id], references: [id], onDelete: Cascade)
+  purchases  Purchase[]
+  @@index([tierId], map: "Customer_tierId_fkey")
 }
 
 model Purchase {
-    purchase_id  Int       @id @default(autoincrement())
-    user_id      Int       // FK referencing User (Customer ID)
-    total_amount Decimal   @db.Decimal(10,2)
-    shipping_fee Decimal   @db.Decimal(10,2)
-    grand_total  Decimal   @db.Decimal(10,2)
-    order_date   DateTime
+  purchase_id     Int                  @id @default(autoincrement())
+  user_id         Int
+  total_amount    Decimal              @db.Decimal(10, 2)
+  shipping_fee    Decimal              @db.Decimal(10, 2)
+  grand_total     Decimal              @db.Decimal(10, 2)
+  order_date      DateTime
+  deliveryDetails DeliveryItemDetails?
+  customer        Customer             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items           PurchaseItem[]
 
-    items        PurchaseItem[]  // Many-to-many relation with Item
-    customer     Customer  @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
+  @@index([user_id], map: "Purchase_user_id_fkey")
 }
 
 model Item {
-    item_id          Int      @id @default(autoincrement())
-    name             String
-    price           Decimal  @db.Decimal(10,2)
-    stock           Int
-    image_url       String
-    category        String
-    warranty_details String?
+  item_id      Int            @id @default(autoincrement())
+  price        Decimal        @db.Decimal(65, 2)
+  category     String
+  date_added   DateTime
+  product_name String
+  quantity     Int
+  supplierId   Int
+  supplier     Supplier       @relation(fields: [supplierId], references: [id])
+  orders       Order[]
+  PurchaseItem PurchaseItem[]
+  Warranty     Warranty?
 
-    warranty        Warranty?
-    purchases      PurchaseItem[]  // Many-to-many relation with Purchase
+  @@index([supplierId], map: "Item_supplierId_fkey")
 }
 
-model PurchaseItem {  // Junction table for Purchase and Item
-    id          Int     @id @default(autoincrement())
-    purchase_id Int
-    item_id     Int
-    quantity    Int
+model PurchaseItem {
+  id          Int      @id @default(autoincrement())
+  purchase_id Int
+  item_id     Int
+  quantity    Int
+  item        Item     @relation(fields: [item_id], references: [item_id], onDelete: Cascade)
+  purchase    Purchase @relation(fields: [purchase_id], references: [purchase_id], onDelete: Cascade)
 
-    purchase    Purchase @relation(fields: [purchase_id], references: [purchase_id], onDelete: Cascade)
-    item        Item @relation(fields: [item_id], references: [item_id], onDelete: Cascade)
-
-    @@unique([purchase_id, item_id]) // Ensures no duplicate entries
+  @@unique([purchase_id, item_id])
+  @@index([item_id], map: "PurchaseItem_item_id_fkey")
 }
 
 model Warranty {
-    warranty_id  Int      @id @default(autoincrement())
-    item_id      Int      @unique
-    expiry_date  DateTime
-
-    item         Item @relation(fields: [item_id], references: [item_id], onDelete: Cascade)
+  warranty_id Int      @id @default(autoincrement())
+  expiry_date DateTime
+  item_id     Int      @unique
+  item        Item     @relation(fields: [item_id], references: [item_id], onDelete: Cascade)
 }
 
-model Promotion {
-    promotion_id Int      @id @default(autoincrement())
-    customer_id  Int      // New FK referencing Customer
-    promo_code   String   @unique
-    discount     Decimal  @db.Decimal(10,2)
-    expiry_date  DateTime
-
-    customer     Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+model Tier {
+  id         Int        @id @default(autoincrement())
+  name       String     @unique
+  pointLevel Int
+  customers  Customer[]
+  rewards    Reward[]
 }
 
-model ContactMessage {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String
-  subject   String
-  message   String
-  createdAt DateTime @default(now())
+model Reward {
+  id           Int      @id @default(autoincrement())
+  tierType     String
+  name         String
+  offer        String
+  generateDate DateTime @default(now())
+  expireDate   DateTime
+  notes        String?
+  tierId       Int
+  tier         Tier     @relation(fields: [tierId], references: [id])
+
+  @@index([tierId], map: "Reward_tierId_fkey")
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  quantity    Int
+  requireDate DateTime
+  remarks     String?
+  createdAt   DateTime @default(now())
+  itemId      Int
+  supplierId  Int
+  item        Item     @relation(fields: [itemId], references: [item_id])
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([itemId], map: "Order_itemId_fkey")
+  @@index([supplierId], map: "Order_supplierId_fkey")
+}
+
+model Supplier {
+  id      Int     @id @default(autoincrement())
+  name    String
+  sid     String
+  email   String? @unique
+  contact String?
+  address String?
+  remarks String?
+  nic     String?
+  gender  String?
+  items   Item[]
+  orders  Order[]
+}
+
+model DeliveryItemDetails {
+  TrackingID            Int      @id @default(autoincrement())
+  Description           String
+  Client_Name           String
+  Delivery_address      String
+  Contact_Number        String
+  Email                 String
+  Assigned_Date         String
+  Expected_DeliveryDate String?
+  Comments              String?
+  purchaseId            Int      @unique
+  purchase              Purchase @relation(fields: [purchaseId], references: [purchase_id])
+}
+
+enum Role {
+  general_manager
+  customer
+  product_manager
+  delivery_manager
+  driver
+  supplier_manager
 }
