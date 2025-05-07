@@ -94,6 +94,29 @@ app.get('/suppliers', (req, res) => {
   });
 });
 
+//API endpoint which provides next supplier ID
+app.get('/supplier/next-id', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query("SELECT sid FROM suppliers ORDER BY id DESC LIMIT 1");
+
+    let nextId = "S00001"; // Default for first entry
+
+    if (rows.length > 0 && rows[0].sid) {
+      const lastSid = rows[0].sid; // e.g., "S00025"
+      const numericPart = parseInt(lastSid.slice(1)); // remove 'S' and parse number
+      const nextNumeric = numericPart + 1;
+      nextId = "S" + nextNumeric.toString().padStart(5, '0'); // "S00026"
+    }
+
+    res.json({ nextId });
+  } catch (error) {
+    console.error("Error generating next supplier ID:", error);
+    res.status(500).send("Error generating next supplier ID");
+  }
+});
+
+
+
 // API endpoint for deleting a supplier
 app.delete('/supplier/:id', (req, res) => {
   const { id } = req.params;
