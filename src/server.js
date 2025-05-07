@@ -102,6 +102,15 @@ app.post('/add', (req, res) => {
     });
 });
 
+// Email transport config
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'pixelpulseinnovations00@gmail.com',       
+        pass: 'qxtd agbo leli mhcg'           
+    }
+});
+
 // Send email update
 app.post('/sendemail', (req, res) => {
     const { email, trackingID, description, expectedDeliveryDate } = req.body;
