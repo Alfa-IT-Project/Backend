@@ -102,6 +102,36 @@ app.post('/add', (req, res) => {
     });
 });
 
+// Send email update
+app.post('/sendemail', (req, res) => {
+    const { email, trackingID, description, expectedDeliveryDate } = req.body;
+
+    const mailOptions = {
+        from: 'pixelpulseinnovations00@gmail.com',       
+        to: email,
+        subject: `Delivery Update - Tracking ID: ${trackingID}`,
+        html: `
+            <h3>Hello,</h3>
+            <p>This is an update regarding your delivery:</p>
+            <ul>
+                <li><strong>Tracking ID:</strong> ${trackingID}</li>
+                <li><strong>Description:</strong> ${description}</li>
+                <li><strong>Expected Delivery Date:</strong> ${expectedDeliveryDate}</li>
+            </ul>
+            <p>Thank you for choosing our service.</p>
+        `
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+            console.error("Error sending email:", err);
+            return res.status(500).json({ error: "Failed to send email" });
+        }
+        res.json({ message: "Email sent successfully" });
+    });
+});
+
+
 // Start server
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
