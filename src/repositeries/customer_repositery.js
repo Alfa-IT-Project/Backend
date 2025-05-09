@@ -6,32 +6,18 @@ const prisma = new PrismaClient();
 async function getCustomers() {
     try {
         const customers = await prisma.customer.findMany({
-            select: { // Use select instead of include
-                id: true,
-                notes: true, // Now correctly included
-                user: {
-                    select: {
-                        id: true,
-                        username: true,
-                        name: true,
-                        email: true,
-                        phone: true,
-                        address: true,
-                        role: true,
-                    }
-                },
-                purchases: true, // Include related purchases
+            include: {
+                user: true,
+                // purchases: true,
             }
         });
 
-        return customers; 
+        return customers;
     } catch (err) {
-        console.error("Error fetching customers:", err); 
-        throw new Error("Could not retrieve customers"); 
+        console.error("Error fetching customers:", err);
+        throw new Error("Could not retrieve customers");
     }
 }
-
-
 
 async function getCustomerByUsername(username) {
     try {
@@ -61,80 +47,6 @@ async function getCustomerByUserId(user_id) {
         throw err;
     }
 }
-
-// async function saveCustomer(credentials) {
-//     try {
-//         let hashedPassword;
-
-//         // Hash the password only if it's provided
-//         if (credentials.password && credentials.password.trim() !== '') {
-//             hashedPassword = await bcrypt.hash(credentials.password, 10);
-//         }
-
-//         // Check if the user exists
-//         const existingUser = await prisma.user.findUnique({
-//             where: {
-//                 id: credentials.id,
-//             },
-//         });
-
-//         if (existingUser) {
-//             // Update the existing user
-//             const updateData = {
-//                 username: credentials.username,
-//                 name: credentials.name,
-//                 email: credentials.email,
-//                 phone: credentials.phone,
-//                 address: credentials.address,
-//                 customer: {
-//                     update: {  // Update the nested customer record
-//                         notes: credentials.notes || null,
-//                     }
-//                 }
-//             };
-
-//             // Only update the password if a new one is provided
-//             if (hashedPassword) {
-//                 updateData.password = hashedPassword;
-//             }
-
-//             const result = await prisma.user.update({
-//                 where: {
-//                     id: credentials.id,
-//                 },
-//                 data: updateData,
-//                 include: {
-//                     customer: true, // Include the customer data in the result
-//                 }
-//             });
-//             console.log(`updateCustomer query result:`, result);
-//             return result;
-//         } else {
-//             // Create a new user if one doesn't exist
-//             const result = await prisma.user.create({
-//                 data: {
-//                     username: credentials.username,
-//                     name: credentials.name,
-//                     email: credentials.email,
-//                     phone: credentials.phone,
-//                     address: credentials.address,
-//                     role: "customer",
-//                     customer: {
-//                         create: {
-//                             notes: credentials.notes || null, // Optional field
-//                         },
-//                     },
-//                     password: hashedPassword,
-//                 },
-//             });
-
-//             console.log(`saveCustomer query result:`, result);
-//             return result;
-//         }
-//     } catch (err) {
-//         throw err;
-//     }
-// }
 
 export const saveCustomer = async ( id, body) => {
     try {
@@ -179,7 +91,6 @@ async function updateCustomerDetails(id, data) {
                     email: data.email ?? existingCustomer.user.email,
                     phone: data.phone ?? existingCustomer.user.phone,
                     address: data.address ?? existingCustomer.user.address,
-                    // password: data.password ?? existingCustomer.user.password,
                 },
             },
         },

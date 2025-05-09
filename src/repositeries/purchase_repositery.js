@@ -6,30 +6,15 @@ const prisma = new PrismaClient();
 async function getAllPurchases() {
     try {
         const purchases = await prisma.purchase.findMany({
-            select: {
-                purchase_id: true,
-                user_id: true,
-                total_amount: true,
-                shipping_fee: true,
-                grand_total: true,
-                order_date: true,
+            include: {
                 items: {
-                    select: {
-                        item_id: true,
-                        quantity: true,
-                        item: {
-                            select: {
-                                item_id: true,
-                                name: true,
-                                price: true,
-                                stock: true,
-                                image_url: true,
-                                category: true,
-                                warranty_details: true,
-                            }
-                        }
+                    include: {
+                        item: true
                     }
                 }
+            },
+            orderBy: {
+                order_date: 'desc'
             }
         });
 

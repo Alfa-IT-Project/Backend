@@ -1,13 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import mysql from 'mysql2';
+import nodemailer from 'nodemailer';
 dotenv.config();
 import user_routers from './routers/user_controller.js';
 import customer_routers from './routers/customer_controller.js';
 import purchase_routers from './routers/purchase_controller.js';
-import promotion_routers from './routers/promotion_controller.js';
-//import report_routers from './routers/report_controller.js';  
-import contact_router from'./routers/contact_controller.js';
+import rewards_routers from './routers/rewards_controller.js';
+
+import performanceRoutes from './routes/performance.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import exp from 'constants';
@@ -35,10 +37,10 @@ app.use(logger('dev'));
 app.use('/users', user_routers);
 app.use('/customers', customer_routers);
 app.use('/purchases', purchase_routers);
-app.use('/promotions', promotion_routers);
-// app.use('/reports', report_routers);
-app.use('/contact', contact_router);
+app.use('/rewards', rewards_routers);
 
+app.use('/api/performance', performanceRoutes);
+app.use('/api/settings', settingsRoutes);
 const db = mysql.createConnection(process.env.DATABASE_URL);
 
 db.connect(err => {
@@ -46,7 +48,6 @@ db.connect(err => {
     console.error("Database connection failed:", err);
     process.exit(1);
   }
-  console.log("Connected to the database.");
 });
 
 /*Inventory records*/
@@ -82,7 +83,7 @@ app.post("/add_item", (req, res) => {
 
 // Get all items
 app.get("/hardware_inventory", (req, res) => {
-  const sql = "SELECT item_id, product_name, category, quantity, price, supplier_name, date_added FROM item";
+  const sql = "SELECT * FROM item";
   db.query(sql, (err, result) => {
     if (err) {
       console.error("Database error:", err);
@@ -111,23 +112,32 @@ app.get("/api/inventory/:id", (req, res) => {
   });
 });
 
-// Update item by ID
+// Update an existing item
 app.put("/api/inventory/update/:id", (req, res) => {
   const id = req.params.id;
-  const { product_name, quantity, price, supplier_name, date_added } = req.body;
+  const { product_name, category, quantity, price, supplier_name, date_added } = req.body;
 
-  // Ensure valid quantity and price
+  // Input validation
+  if (!product_name || !category || !quantity || !price || !supplier_name || !date_added) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  // Ensure quantity and price are valid numbers
   if (isNaN(quantity) || isNaN(price)) {
     return res.status(400).json({ error: "Quantity and price must be valid numbers" });
   }
 
-  const sql = "UPDATE item SET product_name = ?, quantity = ?, price = ?, supplier_name = ?, date_added = ? WHERE item_id = ?";
-  const values = [product_name, quantity, price, supplier_name, date_added, id];
+  const sql = "UPDATE item SET product_name = ?, category = ?, quantity = ?, price = ?, supplier_name = ?, date_added = ? WHERE item_id = ?";
+  const values = [product_name, category, quantity, price, supplier_name, date_added, id];
 
   db.query(sql, values, (err, result) => {
     if (err) {
       console.error("Database error:", err);
-      return res.status(500).json({ message: "Something unexpected has occurred", error: err.message });
+      return res.status(500).json({ error: "Failed to update item" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Item not found" });
     }
 
     return res.json({ success: "Item updated successfully" });
@@ -137,7 +147,7 @@ app.put("/api/inventory/update/:id", (req, res) => {
 // Delete item by ID
 app.delete("/api/inventory/delete/:id", (req, res) => {
   const id = req.params.id;
-  const sql = "DELETE FROM item WHERE item_id = ?"; // Ensure correct column name
+  const sql = "DELETE FROM item WHERE item_id = ?";
 
   db.query(sql, [id], (err, result) => {
     if (err) {
@@ -152,6 +162,38 @@ app.delete("/api/inventory/delete/:id", (req, res) => {
     return res.json({ success: "Item deleted successfully" });
   });
 });
+
+// Product Manager Dashboard Summary
+app.get("/api/pm-dashboard", (req, res) => {
+  const stats = {};
+
+  const totalSql = "SELECT COUNT(*) AS total FROM item";
+  db.query(totalSql, (err, totalResult) => {
+    if (err) return res.status(500).json({ error: "Failed to fetch total products" });
+
+    stats.totalProducts = totalResult[0].total;
+
+    const lowStockSql = "SELECT COUNT(*) AS lowStock FROM item WHERE quantity < 10";
+    db.query(lowStockSql, (err2, lowStockResult) => {
+      if (err2) return res.status(500).json({ error: "Failed to fetch low stock items" });
+
+      stats.lowStockItems = lowStockResult[0].lowStock;
+
+      const newItemsSql = `
+        SELECT COUNT(*) AS newItems
+        FROM item
+        WHERE date_added >= CURDATE() - INTERVAL 7 DAY
+      `;
+      db.query(newItemsSql, (err3, newItemsResult) => {
+        if (err3) return res.status(500).json({ error: "Failed to fetch new items" });
+
+        stats.newItems = newItemsResult[0].newItems;
+        return res.json(stats);
+      });
+    });
+  });
+});
+
 
 /*Inventory End*/
 //-------------------------------------------------------------------------------
@@ -199,6 +241,29 @@ app.get('/suppliers', (req, res) => {
     }
   });
 });
+
+//API endpoint which provides next supplier ID
+app.get('/supplier/next-id', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query("SELECT sid FROM suppliers ORDER BY id DESC LIMIT 1");
+
+    let nextId = "S00001"; // Default for first entry
+
+    if (rows.length > 0 && rows[0].sid) {
+      const lastSid = rows[0].sid; // e.g., "S00025"
+      const numericPart = parseInt(lastSid.slice(1)); // remove 'S' and parse number
+      const nextNumeric = numericPart + 1;
+      nextId = "S" + nextNumeric.toString().padStart(5, '0'); // "S00026"
+    }
+
+    res.json({ nextId });
+  } catch (error) {
+    console.error("Error generating next supplier ID:", error);
+    res.status(500).send("Error generating next supplier ID");
+  }
+});
+
+
 
 // API endpoint for deleting a supplier
 app.delete('/supplier/:id', (req, res) => {
@@ -299,13 +364,29 @@ Hardware Store`
     });
   });
 });
+
+// ✅ New: Update delivery status
+app.put('/order/status/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const sql = 'UPDATE orders SET deliveryStatus = ? WHERE id = ?';
+  db.query(sql, [status, id], (err, result) => {
+    if (err) {
+      console.error('Failed to update delivery status:', err);
+      res.status(500).send('Error updating status');
+    } else {
+      res.status(200).send('Status updated successfully');
+    }
+  });
+});
 /*Supplier End*/
 //-------------------------------------------------------------------------------
 
 /*Delivery records*/
 
 // Get all delivery records
-app.get('/deliveries', (req, res) => {
+app.get('/allDeliveries', (req, res) => {
   const sql = 'SELECT * FROM delivery_itemdetails';
   db.query(sql, (err, result) => {
       if (err) {
@@ -359,7 +440,7 @@ app.delete('/delete/:trackingID', (req, res) => {
 });
 
 // Add new delivery item
-app.post('/add/delivery', (req, res) => {
+app.post('/add', (req, res) => {
   const { trackingNumber, description, clientName, deliveryAddress, contactNumber, email, assignedDate, expectedDeliveryDate, comments } = req.body;
   const sql = `INSERT INTO delivery_itemdetails (TrackingID, Description, Client_Name, Delivery_address, Contact_Number, Email, Assigned_Date, Expected_DeliveryDate, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
@@ -381,6 +462,46 @@ app.post('/add/delivery', (req, res) => {
   }
   });
 });
+
+// Email transport config
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+      user: 'pixelpulseinnovations00@gmail.com',       
+      pass: 'qxtd agbo leli mhcg'           
+  }
+});
+
+// Send email update
+app.post('/sendemail', (req, res) => {
+  const { email, trackingID, description, expectedDeliveryDate } = req.body;
+
+  const mailOptions = {
+      from: 'pixelpulseinnovations00@gmail.com',       
+      to: email,
+      subject: `Delivery Update - Tracking ID: ${trackingID}`,
+      html: `
+          <h3>Hello,</h3>
+          <p>This is an update regarding your delivery:</p>
+          <ul>
+              <li><strong>Tracking ID:</strong> ${trackingID}</li>
+              <li><strong>Description:</strong> ${description}</li>
+              <li><strong>Expected Delivery Date:</strong> ${expectedDeliveryDate}</li>
+          </ul>
+          <p>Thank you for choosing our service.</p>
+      `
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+          console.error("Error sending email:", err);
+          return res.status(500).json({ error: "Failed to send email" });
+      }
+      res.json({ message: "Email sent successfully" });
+  });
+});
+
+
 /*Delivery End*/
 //-------------------------------------------------------------------------------
 export default app;
