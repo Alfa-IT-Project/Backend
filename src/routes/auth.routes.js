@@ -1,8 +1,8 @@
 import express from 'express';
-import { login, register } from '../controllers/auth.controller.js';
+import { login, register, validateUser } from '../controllers/auth.controller.js';
 import { isAdmin } from '../middlewares/auth.js';
 import { AppError } from '../middlewares/error.js';
-import { validateLogin, validateRegister } from '../middlewares/validation.js';
+import { validateLogin, validateRegister, validateEmail } from '../middlewares/validation.js';
 
 const router = express.Router();
 
@@ -19,12 +19,11 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - username
  *               - password
  *             properties:
- *               email:
+ *               username:
  *                 type: string
- *                 format: email
  *               password:
  *                 type: string
  *                 format: password
@@ -44,6 +43,8 @@ const router = express.Router();
  *                     id:
  *                       type: string
  *                     email:
+ *                       type: string
+ *                     username:
  *                       type: string
  *                     role:
  *                       type: string
@@ -123,6 +124,46 @@ router.post('/register', isAdmin, validateRegister, async (req, res, next) => {
       next(error);
     } else {
       next(new AppError(500, 'Registration failed'));
+    }
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/validate:
+ *   post:
+ *     summary: Validate if user exists
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *             properties:
+ *               username:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User exists
+ *       404:
+ *         description: User not found
+ */
+router.post('/validate', async (req, res, next) => {
+  try {
+    const { username } = req.body;
+    console.log('Validate user request for username:', username);
+    const result = await validateUser(username);
+    console.log('Validation result:', result);
+    res.json(result);
+  } catch (error) {
+    console.error('Validation error:', error);
+    if (error instanceof AppError) {
+      next(error);
+    } else {
+      next(new AppError(500, 'Validation failed'));
     }
   }
 });

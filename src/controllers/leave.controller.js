@@ -5,8 +5,9 @@ export const getLeaves = async (req, res) => {
     const userId = req.user?.id;
     const isAdmin = req.user?.role === 'ADMIN';
 
+    // If no user is authenticated (for testing), return all leaves
     const leaves = await prisma.leaveRequest.findMany({
-      where: isAdmin ? undefined : { userId },
+      where: (userId && !isAdmin) ? { userId } : undefined,
       include: {
         user: {
           select: {
@@ -21,7 +22,8 @@ export const getLeaves = async (req, res) => {
 
     res.json(leaves);
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error('Error fetching leaves:', error);
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
   }
 };
 
@@ -83,9 +85,23 @@ export const getLeaveBalance = async (req, res) => {
         .reduce((total, leave) => {
           const startDate = new Date(leave.startDate);
           const endDate = new Date(leave.endDate);
-          const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
-          return total + diffDays;
+          
+          // Count only business days (excluding weekends)
+          let businessDays = 0;
+          const currentDate = new Date(startDate);
+          
+          // Loop through each day from start to end
+          while (currentDate <= endDate) {
+            // 0 = Sunday, 6 = Saturday
+            const dayOfWeek = currentDate.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+              businessDays++;
+            }
+            // Move to next day
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          
+          return total + businessDays;
         }, 0);
     };
 

@@ -10,6 +10,13 @@ import rewards_routers from './routers/rewards_controller.js';
 
 import performanceRoutes from './routes/performance.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
+import leaveRoutes from './routes/leave.routes.js';
+import scheduleRoutes from './routes/schedule.routes.js';
+import attendanceRoutes from './routes/attendance.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
+import payrollRoutes from './routes/payroll.routes.js';
+
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import exp from 'constants';
@@ -41,6 +48,12 @@ app.use('/rewards', rewards_routers);
 
 app.use('/api/performance', performanceRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/payroll', payrollRoutes);
 const db = mysql.createConnection(process.env.DATABASE_URL);
 
 db.connect(err => {
@@ -56,16 +69,8 @@ db.connect(err => {
 app.post("/add_item", (req, res) => {
   const { product_name, category, quantity, price, supplier_name, date_added } = req.body;
 
-  console.log("Received data:", req.body);
-
-  // Input validation
   if (!product_name || !category || !quantity || !price || !supplier_name || !date_added) {
     return res.status(400).json({ error: "All fields are required" });
-  }
-
-  // Ensure quantity and price are valid numbers
-  if (isNaN(quantity) || isNaN(price)) {
-    return res.status(400).json({ error: "Quantity and price must be valid numbers" });
   }
 
   const sql = "INSERT INTO item (product_name, category, quantity, price, supplier_name, date_added) VALUES (?, ?, ?, ?, ?, ?)";
@@ -76,7 +81,6 @@ app.post("/add_item", (req, res) => {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Database error" });
     }
-    console.log("Item added with ID:", result.insertId);
     return res.status(201).json({ success: "Item added successfully", itemId: result.insertId });
   });
 });
@@ -93,7 +97,7 @@ app.get("/hardware_inventory", (req, res) => {
   });
 });
 
-// Get a specific item by ID
+// Get item by ID
 app.get("/api/inventory/:id", (req, res) => {
   const id = req.params.id;
   const sql = "SELECT * FROM item WHERE item_id = ?";
@@ -112,20 +116,10 @@ app.get("/api/inventory/:id", (req, res) => {
   });
 });
 
-// Update an existing item
+// Update an item by ID
 app.put("/api/inventory/update/:id", (req, res) => {
   const id = req.params.id;
   const { product_name, category, quantity, price, supplier_name, date_added } = req.body;
-
-  // Input validation
-  if (!product_name || !category || !quantity || !price || !supplier_name || !date_added) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
-
-  // Ensure quantity and price are valid numbers
-  if (isNaN(quantity) || isNaN(price)) {
-    return res.status(400).json({ error: "Quantity and price must be valid numbers" });
-  }
 
   const sql = "UPDATE item SET product_name = ?, category = ?, quantity = ?, price = ?, supplier_name = ?, date_added = ? WHERE item_id = ?";
   const values = [product_name, category, quantity, price, supplier_name, date_added, id];
@@ -133,18 +127,14 @@ app.put("/api/inventory/update/:id", (req, res) => {
   db.query(sql, values, (err, result) => {
     if (err) {
       console.error("Database error:", err);
-      return res.status(500).json({ error: "Failed to update item" });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Item not found" });
+      return res.status(500).json({ message: "Something unexpected has occurred", error: err.message });
     }
 
     return res.json({ success: "Item updated successfully" });
   });
 });
 
-// Delete item by ID
+// Delete an item by ID
 app.delete("/api/inventory/delete/:id", (req, res) => {
   const id = req.params.id;
   const sql = "DELETE FROM item WHERE item_id = ?";
@@ -165,32 +155,116 @@ app.delete("/api/inventory/delete/:id", (req, res) => {
 
 // Product Manager Dashboard Summary
 app.get("/api/pm-dashboard", (req, res) => {
+  
   const stats = {};
 
+  // Total products
   const totalSql = "SELECT COUNT(*) AS total FROM item";
+  
   db.query(totalSql, (err, totalResult) => {
-    if (err) return res.status(500).json({ error: "Failed to fetch total products" });
-
+    if (err) {
+      console.error("Dashboard error (total):", err);
+      return res.status(500).json({ error: "Failed to fetch total products" });
+    }
+    
     stats.totalProducts = totalResult[0].total;
 
+    // Low stock (quantity < 10)
     const lowStockSql = "SELECT COUNT(*) AS lowStock FROM item WHERE quantity < 10";
+
     db.query(lowStockSql, (err2, lowStockResult) => {
-      if (err2) return res.status(500).json({ error: "Failed to fetch low stock items" });
+      if (err2) {
+        console.error("Dashboard error (low stock):", err2);
+        return res.status(500).json({ error: "Failed to fetch low stock items" });
+      }
 
       stats.lowStockItems = lowStockResult[0].lowStock;
 
-      const newItemsSql = `
-        SELECT COUNT(*) AS newItems
-        FROM item
-        WHERE date_added >= CURDATE() - INTERVAL 7 DAY
-      `;
+      // New items added in the last 7 days
+      const newItemsSql = "SELECT COUNT(*) AS newItems FROM item WHERE date_added >= CURDATE() - INTERVAL 7 DAY";
+
       db.query(newItemsSql, (err3, newItemsResult) => {
-        if (err3) return res.status(500).json({ error: "Failed to fetch new items" });
+        if (err3) {
+          console.error("Dashboard error (new items):", err3);
+          return res.status(500).json({ error: "Failed to fetch new items" });
+        }
 
         stats.newItems = newItemsResult[0].newItems;
+
+        // Final response
         return res.json(stats);
       });
     });
+  });
+});
+
+// Product Manager Dashboard Summary
+app.get("/api/pm-dashboard", (req, res) => {
+  
+  const stats = {};
+
+  // Total products
+  const totalSql = "SELECT COUNT(*) AS total FROM item";
+  
+  db.query(totalSql, (err, totalResult) => {
+    if (err) {
+      console.error("Dashboard error (total):", err);
+      return res.status(500).json({ error: "Failed to fetch total products" });
+    }
+    
+    stats.totalProducts = totalResult[0].total;
+
+    // Low stock (quantity < 10)
+    const lowStockSql = "SELECT COUNT(*) AS lowStock FROM item WHERE quantity < 10";
+
+    db.query(lowStockSql, (err2, lowStockResult) => {
+      if (err2) {
+        console.error("Dashboard error (low stock):", err2);
+        return res.status(500).json({ error: "Failed to fetch low stock items" });
+      }
+
+      stats.lowStockItems = lowStockResult[0].lowStock;
+
+      // New items added in the last 7 days
+      const newItemsSql = "SELECT COUNT(*) AS newItems FROM item WHERE date_added >= CURDATE() - INTERVAL 7 DAY";
+
+      db.query(newItemsSql, (err3, newItemsResult) => {
+        if (err3) {
+          console.error("Dashboard error (new items):", err3);
+          return res.status(500).json({ error: "Failed to fetch new items" });
+        }
+
+        stats.newItems = newItemsResult[0].newItems;
+
+        // Final response
+        return res.json(stats);
+      });
+    });
+  });
+});
+
+// Report: Low Stock Items
+app.get("/api/reports/low-stock", (req, res) => {
+  // You can adjust the threshold as needed, or use a reorder_level column if available
+  const sql = "SELECT product_name AS item, category, quantity, 10 AS reorder, supplier_name AS supplier, date_added AS restocked FROM item WHERE quantity <= 10";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Database error (low stock report):", err);
+      return res.status(500).json({ message: "Server error" });
+    }
+    return res.json(result);
+  });
+});
+
+// Report: Newly Added Items (last 7 days)
+app.get("/api/reports/new-items", (req, res) => {
+  const sql = "SELECT product_name AS item, category, quantity, price, date_added AS date, 'PM123' AS addedBy FROM item WHERE date_added >= CURDATE() - INTERVAL 7 DAY";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Database error (new items report):", err);
+      return res.status(500).json({ message: "Server error" });
+    }
+    return res.json(result);
   });
 });
 
@@ -384,121 +458,131 @@ app.put('/order/status/:id', (req, res) => {
 //-------------------------------------------------------------------------------
 
 /*Delivery records*/
-
 // Get all delivery records
 app.get('/allDeliveries', (req, res) => {
-  const sql = 'SELECT * FROM delivery_itemdetails';
-  db.query(sql, (err, result) => {
-      if (err) {
-          console.error("Error fetching data:", err);
-          return res.status(500).json({ error: "Database error" });
-      }
-      res.json(result);
-  });
+    const sql = 'SELECT * FROM delivery_itemdetails';
+    db.query(sql, (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(result);
+    });
 });
 
-// Get a single delivery item
+// Get single delivery item by tracking ID
 app.get('/get/:trackingID', (req, res) => {
-  const { trackingID } = req.params;
-  const sql = 'SELECT * FROM delivery_itemdetails WHERE TrackingID = ?';
-  db.query(sql, [trackingID], (err, result) => {
-      if (err) {
-          console.error("Error fetching data:", err);
-          return res.status(500).json({ error: "Database error" });
-      }
-      if (result.length === 0) {
-          return res.status(404).json({ message: "Item not found" });
-      }
-      res.json(result[0]);
-  });
-});
-
-// Update delivery item
-app.put('/update/:trackingID', (req, res) => {
-  const { trackingID } = req.params;
-  const { description, clientName, deliveryAddress, contactNumber, email, assignedDate, expectedDeliveryDate, comments } = req.body;
-
-  const sql = `UPDATE delivery_itemdetails SET
-      Description = ?, Client_Name = ?, Delivery_address = ?, Contact_Number = ?, Email = ?, Assigned_Date = ?, Expected_DeliveryDate = ?, Comments = ? WHERE TrackingID = ?`;
-
-  db.query(sql, [description, clientName, deliveryAddress, contactNumber, email, assignedDate, expectedDeliveryDate, comments, trackingID], (err, result) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      if (result.affectedRows === 0) return res.status(404).json({ message: "Delivery item not found" });
-      res.json({ message: "Data updated successfully" });
-  });
-});
-
-// Delete delivery item
-app.delete('/delete/:trackingID', (req, res) => {
-  const { trackingID } = req.params;
-  const sql = 'DELETE FROM delivery_itemdetails WHERE TrackingID = ?';
-  db.query(sql, [trackingID], (err, result) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      if (result.affectedRows === 0) return res.status(404).json({ message: "Item not found" });
-      res.json({ message: "Item deleted successfully" });
-  });
+    const { trackingID } = req.params;
+    const sql = 'SELECT * FROM delivery_itemdetails WHERE TrackingID = ?';
+    db.query(sql, [trackingID], (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (result.length === 0) return res.status(404).json({ message: "Item not found" });
+        res.json(result[0]);
+    });
 });
 
 // Add new delivery item
 app.post('/add', (req, res) => {
-  const { trackingNumber, description, clientName, deliveryAddress, contactNumber, email, assignedDate, expectedDeliveryDate, comments } = req.body;
-  const sql = `INSERT INTO delivery_itemdetails (TrackingID, Description, Client_Name, Delivery_address, Contact_Number, Email, Assigned_Date, Expected_DeliveryDate, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const {
+        description, clientName, deliveryAddress,
+        contactNumber, email, assignedDate, expectedDeliveryDate, comments
+    } = req.body;
 
-  db.query(sql, [trackingNumber, description, clientName, deliveryAddress, contactNumber, email, assignedDate, expectedDeliveryDate, comments], (err, result) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json({ message: "Item added successfully", id: result.insertId });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+    }
 
-      const { email, assignedDate, expectedDeliveryDate } = req.body;
+    if (new Date(expectedDeliveryDate) < new Date(assignedDate)) {
+        return res.status(400).json({ error: "Expected Delivery Date cannot be before Assigned Date" });
+    }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-      return res.status(500).json({ error: "Invalid email format" });
-  }
+    const sql = `
+    INSERT INTO delivery_itemdetails 
+    (Description, Client_Name, Delivery_address, Contact_Number, Email, Assigned_Date, Expected_DeliveryDate, Comments)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  const assigned = new Date(assignedDate);
-  const expected = new Date(expectedDeliveryDate);
-  if (expected < assigned) {
-      return res.status(201).json({ error: "Expected Delivery Date cannot be before Assigned Date" });
-  }
-  });
+db.query(sql, [
+    description, clientName, deliveryAddress,
+    contactNumber, email, assignedDate, expectedDeliveryDate, comments
+], (err, result) => {
+    if (err) {
+        console.error("Database error:", err); // Log full error
+        return res.status(500).json({ error: "Database error" });
+    }
+    res.json({ message: "Item added successfully", id: result.insertId });
+});
+
+});
+
+// Update delivery item
+app.put('/update/:trackingID', (req, res) => {
+    const { trackingID } = req.params;
+    const {
+        description, clientName, deliveryAddress,
+        contactNumber, email, assignedDate, expectedDeliveryDate, comments
+    } = req.body;
+
+    const sql = `
+        UPDATE delivery_itemdetails SET
+        Description = ?, Client_Name = ?, Delivery_address = ?, Contact_Number = ?, Email = ?, 
+        Assigned_Date = ?, Expected_DeliveryDate = ?, Comments = ?
+        WHERE TrackingID = ?`;
+
+    db.query(sql, [
+        description, clientName, deliveryAddress, contactNumber,
+        email, assignedDate, expectedDeliveryDate, comments, trackingID
+    ], (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (result.affectedRows === 0) return res.status(404).json({ message: "Item not found" });
+        res.json({ message: "Data updated successfully" });
+    });
+});
+
+// Delete delivery item
+app.delete('/delete/:trackingID', (req, res) => {
+    const { trackingID } = req.params;
+    const sql = 'DELETE FROM delivery_itemdetails WHERE TrackingID = ?';
+    db.query(sql, [trackingID], (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (result.affectedRows === 0) return res.status(404).json({ message: "Item not found" });
+        res.json({ message: "Item deleted successfully" });
+    });
 });
 
 // Email transport config
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-      user: 'pixelpulseinnovations00@gmail.com',       
-      pass: 'qxtd agbo leli mhcg'           
-  }
+    service: 'gmail',
+    auth: {
+        user: 'pixelpulseinnovations00@gmail.com',       
+        pass: 'qxtd agbo leli mhcg'           
+    }
 });
 
 // Send email update
 app.post('/sendemail', (req, res) => {
-  const { email, trackingID, description, expectedDeliveryDate } = req.body;
+    const { email, trackingID, description, expectedDeliveryDate } = req.body;
 
-  const mailOptions = {
-      from: 'pixelpulseinnovations00@gmail.com',       
-      to: email,
-      subject: `Delivery Update - Tracking ID: ${trackingID}`,
-      html: `
-          <h3>Hello,</h3>
-          <p>This is an update regarding your delivery:</p>
-          <ul>
-              <li><strong>Tracking ID:</strong> ${trackingID}</li>
-              <li><strong>Description:</strong> ${description}</li>
-              <li><strong>Expected Delivery Date:</strong> ${expectedDeliveryDate}</li>
-          </ul>
-          <p>Thank you for choosing our service.</p>
-      `
-  };
+    const mailOptions = {
+        from: 'pixelpulseinnovations00@gmail.com',       
+        to: email,
+        subject: `Delivery Update - Tracking ID: ${trackingID}`,
+        html: `
+            <h3>Hello,</h3>
+            <p>This is an update regarding your delivery:</p>
+            <ul>
+                <li><strong>Tracking ID:</strong> ${trackingID}</li>
+                <li><strong>Description:</strong> ${description}</li>
+                <li><strong>Expected Delivery Date:</strong> ${expectedDeliveryDate}</li>
+            </ul>
+            <p>Thank you for choosing our service.</p>
+        `
+    };
 
-  transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-          console.error("Error sending email:", err);
-          return res.status(500).json({ error: "Failed to send email" });
-      }
-      res.json({ message: "Email sent successfully" });
-  });
+    transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+            console.error("Error sending email:", err);
+            return res.status(500).json({ error: "Failed to send email" });
+        }
+        res.json({ message: "Email sent successfully" });
+    });
 });
 
 

@@ -1,33 +1,64 @@
 import prisma from '../prisma.js';
 import { AppError } from '../middlewares/error.js';
 
+// Simplified getSchedules function that returns mock data for testing
 export const getSchedules = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
-    const isAdmin = req.user?.role === 'ADMIN';
-    const { startDate, endDate, departmentFilter, userId: queryUserId } = req.query;
+    // Extract query parameters
+    const { startDate, endDate, userId, departmentFilter } = req.query;
 
-    let whereClause = isAdmin ? {} : { userId };
+    // Log the request for debugging
+    console.log('GET /api/schedules', { startDate, endDate, userId, departmentFilter });
+
+    // Build the where clause based on provided filters
+    let where = {};
     
-    if (queryUserId && isAdmin) {
-      whereClause.userId = queryUserId;
-    }
-    
+    // Date filters
     if (startDate && endDate) {
-      whereClause.date = {
+      where.date = {
         gte: new Date(startDate),
         lte: new Date(endDate)
       };
-    }
-    
-    if (departmentFilter && isAdmin) {
-      whereClause.user = {
-        department: departmentFilter
+    } else if (startDate) {
+      where.date = {
+        gte: new Date(startDate)
+      };
+    } else if (endDate) {
+      where.date = {
+        lte: new Date(endDate)
       };
     }
 
+    // User filter
+    if (userId) {
+      where.userId = userId;
+    }
+
+    // Department filter - we need to filter users by department first
+    let userIds;
+    if (departmentFilter) {
+      const usersInDepartment = await prisma.user.findMany({
+        where: {
+          department: departmentFilter
+        },
+        select: {
+          id: true
+        }
+      });
+      
+      userIds = usersInDepartment.map(user => user.id);
+      
+      if (userIds.length > 0) {
+        where.userId = { in: userIds };
+      } else {
+        // No users found in this department, return empty array
+        return res.json([]);
+      }
+    }
+
+    // Query the database
     const schedules = await prisma.scheduleEntry.findMany({
-      where: whereClause,
+      where,
       include: {
         user: {
           select: {
@@ -45,6 +76,7 @@ export const getSchedules = async (req, res, next) => {
 
     res.json(schedules);
   } catch (error) {
+    console.error('Error in getSchedules:', error);
     next(new AppError(500, 'Failed to fetch schedules'));
   }
 };
@@ -414,87 +446,99 @@ export const createBulkSchedules = async (req, res, next) => {
   }
 };
 
+// Get staff availability for a specific date
 export const getStaffAvailability = async (req, res, next) => {
   try {
+    // Extract query parameters
     const { date, departmentFilter } = req.query;
-    
+
     if (!date) {
       throw new AppError(400, 'Date is required');
     }
 
-    const queryDate = new Date(date);
+    // Log the request for debugging
+    console.log('GET /api/schedules/availability', { date, departmentFilter });
+
+    // Convert date string to Date objects for the entire day
+    const targetDate = new Date(date);
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
     
-    // Get all staff members
-    let whereClause = { role: 'STAFF' };
-    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Build the where clause for users based on department
+    let userWhere = {
+      role: 'STAFF'
+    };
+
     if (departmentFilter) {
-      whereClause.department = departmentFilter;
+      userWhere.department = departmentFilter;
     }
-    
-    const staffMembers = await prisma.user.findMany({
-      where: whereClause,
+
+    // Get all staff members
+    const staff = await prisma.user.findMany({
+      where: userWhere,
       select: {
         id: true,
         name: true,
-        department: true,
-        email: true
+        email: true,
+        department: true
       }
     });
 
-    // Get scheduled staff for that date
-    const scheduledStaff = await prisma.scheduleEntry.findMany({
+    // Get all schedules for the specified date
+    const schedules = await prisma.scheduleEntry.findMany({
       where: {
-        date: queryDate
-      },
-      select: {
-        userId: true,
-        startTime: true,
-        endTime: true,
-        shiftType: true
+        date: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        userId: {
+          in: staff.map(user => user.id)
+        }
       }
     });
 
-    // Get staff on leave for that date
-    const staffOnLeave = await prisma.leaveRequest.findMany({
+    // Get all approved leave requests for the date
+    const leaves = await prisma.leaveRequest.findMany({
       where: {
         status: 'APPROVED',
-        startDate: {
-          lte: queryDate
-        },
-        endDate: {
-          gte: queryDate
+        startDate: { lte: endOfDay },
+        endDate: { gte: startOfDay },
+        userId: {
+          in: staff.map(user => user.id)
         }
-      },
-      select: {
-        userId: true,
-        type: true
       }
     });
 
-    // Map availability data
-    const availabilityData = staffMembers.map(staff => {
-      const schedule = scheduledStaff.find(s => s.userId === staff.id);
-      const leaveInfo = staffOnLeave.find(l => l.userId === staff.id);
+    // Prepare the availability data
+    const staffAvailability = staff.map(user => {
+      // Find schedules for this user
+      const userSchedules = schedules.filter(schedule => schedule.userId === user.id);
+      
+      // Check if user has approved leave for this date
+      const onLeave = leaves.some(leave => leave.userId === user.id);
+      
+      // User is scheduled if they have any schedules for this date
+      const isScheduled = userSchedules.length > 0;
       
       return {
-        ...staff,
-        status: leaveInfo ? 'ON_LEAVE' : schedule ? 'SCHEDULED' : 'AVAILABLE',
-        leaveType: leaveInfo?.type || null,
-        scheduledTime: schedule ? {
-          start: schedule.startTime,
-          end: schedule.endTime,
-          shiftType: schedule.shiftType
-        } : null
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        department: user.department || 'No Department',
+        isAvailable: !isScheduled && !onLeave,
+        isScheduled: isScheduled,
+        onLeave,
+        schedules: userSchedules
       };
     });
 
-    res.json(availabilityData);
+    res.json(staffAvailability);
   } catch (error) {
-    if (error instanceof AppError) {
-      next(error);
-    } else {
-      next(new AppError(500, 'Failed to fetch staff availability'));
-    }
+    console.error('Error in getStaffAvailability:', error);
+    next(new AppError(500, 'Failed to fetch staff availability'));
   }
 };
 

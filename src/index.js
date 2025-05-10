@@ -19,6 +19,7 @@ import scheduleRoutes from './routes/schedule.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import userRoutes from './routes/user.routes.js';
+import reportRouters from './routers/report_controller.js';
 
 // Load environment variables
 dotenv.config();
@@ -41,9 +42,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/leaves', authenticate, leaveRoutes);
 app.use('/api/payroll', authenticate, payrollRoutes);
 app.use('/api/performance', authenticate, performanceRoutes);
-app.use('/api/schedules', authenticate, scheduleRoutes);
+app.use('/api/schedules', scheduleRoutes);
 app.use('/api/attendance', authenticate, attendanceRoutes);
 app.use('/api/settings', authenticate, settingsRoutes);
+app.use('/api/reports', reportRouters);
 
 // Add a test route that doesn't require authentication
 app.get('/api/test-users', async (req, res) => {

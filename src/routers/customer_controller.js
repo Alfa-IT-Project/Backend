@@ -1,5 +1,5 @@
 import express, { response } from "express";
-import { deleteCustomerById, getCustomers, getCustomerPurchases} from "../repositeries/customer_repositery.js";
+import { deleteCustomerById, getCustomers, getCustomerPurchases, getCustomersByTier} from "../repositeries/customer_repositery.js";
 import { authenticateToken } from "../service/user_management_service.js";
 import { createCustomer , sendSMS} from "../service/customer_service.js";
 import { Prisma } from '@prisma/client';
@@ -107,6 +107,17 @@ router.delete("/:id/deleteCustomer", authenticateToken(['general_manager']), asy
     }
 });
 
+router.get('/getCustomersByTier/:tier', authenticateToken(['general_manager']), async (req, res) => {
+    try {
+        const tier = req.params.tier;
+        const customers = await getCustomersByTier(tier);
+        res.json(customers);
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).send('Internal server error');
+    }
+});
 
 export default router;
 

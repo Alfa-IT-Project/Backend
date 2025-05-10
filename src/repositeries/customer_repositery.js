@@ -34,12 +34,12 @@ async function getCustomerByUsername(username) {
     }       
 }
 
-async function getCustomerByUserId(user_id) {
+async function getCustomerByUserId(id) {
     try{
-        const customer = await prisma.user.findUnique({
-            where: { id: user_id },
+        const customer = await prisma.customer.findUnique({
+            where: { id: id },
             include: {
-                customer: true,
+                user: true,
             }
         });
         return customer;
@@ -153,21 +153,21 @@ async function getCustomerPurchases(userId) {
 }
 async function deleteCustomerById(user_id) {
     try {
-        const result = await prisma.user.delete({
-            where: { id: user_id }, // Ensure the correct field name
-            select: {
-                role: true, // Corrected syntax
-            },
-        });
-
-        console.log(`deleteCustomer query result:`, result);
-        return result;
+      const result = await prisma.customer.delete({
+        where: { id: user_id },
+        include: {
+          user: true,
+        },
+      });
+  
+      console.log(`deleteCustomer query result:`, result);
+      return result;
     } catch (err) {
-        console.error("Error deleting customer:", err);
-        throw err;
+      console.error("Error deleting customer:", err);
+      throw err;
     }
-}
-
+  }
+  
 async function SumOfPurchasesAndGetHighestPurchase() {
     try {
         const result = await prisma.$queryRaw`SELECT SUM(total_amount) as total,
@@ -180,4 +180,25 @@ async function SumOfPurchasesAndGetHighestPurchase() {
     }
 }
 
-export { getCustomers, getCustomerByUsername, getCustomerProfile, getCustomerPurchases, deleteCustomerById, getCustomerByUserId, SumOfPurchasesAndGetHighestPurchase , updateCustomerDetails};
+async function getCustomersByTier(tier) {
+    try {
+        const customers = await prisma.customer.findMany({
+            where: {
+                tier: {
+                    name: tier.toLowerCase() // Match the tier name in the Tier model
+                }
+            },
+            include: {
+                user: true,
+                tier: true // Include tier information
+            }
+        });
+
+        return customers;
+    } catch (err) {
+        console.error("Error fetching customers by tier:", err);
+        throw new Error("Could not retrieve customers by tier");
+    }
+}
+
+export { getCustomers, getCustomerByUsername, getCustomerProfile, getCustomerPurchases, deleteCustomerById, getCustomerByUserId, SumOfPurchasesAndGetHighestPurchase, updateCustomerDetails, getCustomersByTier };

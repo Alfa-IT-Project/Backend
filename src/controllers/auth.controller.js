@@ -5,11 +5,26 @@ import { AppError } from '../middlewares/error.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+export const validateUser = async (username) => {
+  const user = await prisma.user.findUnique({
+    where: { username }
+  });
+
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  return {
+    exists: true,
+    username: user.username
+  };
+};
+
 export const login = async (credentials) => {
-  const { email, password } = credentials;
+  const { username, password } = credentials;
 
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { username }
   });
 
   if (!user) {
@@ -32,6 +47,7 @@ export const login = async (credentials) => {
     user: {
       id: user.id,
       email: user.email,
+      username: user.username,
       name: user.name,
       role: user.role
     }
