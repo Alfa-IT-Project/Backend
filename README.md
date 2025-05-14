@@ -1,6 +1,6 @@
 # Backend API Service
 
-#Hardware Store Management System
+# Hardware Store Management System
 
 A comprehensive enterprise management system for hardware stores, built with Node.js. This platform integrates multiple business components—such as inventory, suppliers, customers, delivery, and staff management—for seamless operations management.
 
