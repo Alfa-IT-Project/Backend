@@ -1,6 +1,8 @@
 # Backend API Service
 
-A comprehensive enterprise management system built with Node.js that integrates multiple business components for seamless operations management.
+**Hardware Store Management System**
+
+A comprehensive enterprise management system for hardware stores, built with Node.js. This platform integrates multiple business components—such as inventory, suppliers, customers, delivery, and staff management—for seamless operations management.
 
 ## 🚀 Features
 
@@ -237,4 +239,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Express.js team for the amazing framework
 - Prisma team for the excellent ORM
-- All contributors who have helped shape this project 
+- All contributors who have helped shape this project
