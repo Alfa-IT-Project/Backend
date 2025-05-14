@@ -2,16 +2,19 @@ import express from 'express';
 import {createUser, loginUser, authenticateToken} from '../service/user_management_service.js';
 import {Prisma} from '@prisma/client';
 import { UserAuthError } from '../utils/exeption.js';
+import { getUserProfile } from '../repositeries/user_repositery.js';
+
 
 const router = express.Router();
 
 router.post('/register',async function(req, res, next) {
    try{
-    const credientials = req.body;
-    const result = await createUser(credientials);
+    const credentials = req.body;
+    const result = await createUser(credentials);
 
     if(result) {
         res.send('User created successfully');
+        console.log("User Profile Data:", result);
     }
    }catch(err){
        if (err instanceof Prisma.PrismaClientKnownRequestError){
@@ -25,38 +28,41 @@ router.post('/register',async function(req, res, next) {
 
 router.post('/login', async function(req, res, next) {
     try{
-        const credientials = req.body;
-        const token = await loginUser(credientials);
+        const credentials = req.body;
+        const token = await loginUser(credentials);
         if(token) {
-            res.send({ token: token }); 
+            // return res.send({ token: token }); 
+            res.json(token);  // Send back the token and userId
         }else{
-            res.status(401).send('Invalid credientials');
+            res.status(401).send('Invalid credentials');
         }
     }catch(err){
-        res.status(500).send('Internal server error');
         console.log(err);
+        res.status(500).send('Internal server error');
+        
     }
 });
 
-// Protected route example
-router.get('/protected', async function(req, res) {
-    try{
-        const token = req.headers['authorization']?.split(' ')[1];
-        const result = await authenticateToken(token);
+// Protected route for getting user profile
+router.get('/:userId/profile', authenticateToken(['customer', 'general_manager']), async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);  // Extract user ID from token
 
-        if(result){
-            res.send({ message: 'This is protected data', 
-            userId: result.id });
+        console.log("Authenticated User ID:", userId);  // Log for debugging
+
+        // Fetch the user profile from the database
+        const userProfile = await getUserProfile(userId);
+        console.log("User Profile Data:", userProfile); // Debugging
+
+        if (!userProfile) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
-    }catch(err){
-        if(err instanceof UserAuthError){
-            res.status(401).send(err.message);
-        }else{
-            res.status(500).send('Internal server error');
-        }
+        res.json(userProfile);
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
-   
 });
 
 export default router;
