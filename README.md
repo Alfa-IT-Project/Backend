@@ -206,7 +206,32 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Authors
 
-- Your Name - Initial work
+### Project Contributors
+
+- **KUMARI M. A. D. N.** 
+  - *Role:* Login Part and Customer Relationship Management
+  - *GitHub:* [nadee2k](https://github.com/nadee2k)
+
+- **KAPUWELLA K. G. N. D.**
+  - *Role:* Inventory Management
+  - *GitHub:* [NipunDemintha](https://github.com/NipunDemintha)
+
+- **VITHANA Y. S. D.**
+  - *Role:* Staff Management
+  - *GitHub:* [diw-666](https://github.com/diw-666)
+
+- **AYYASH M. R. Y.**
+  - *Role:* Delivery Management
+  - *GitHub:* [yahiyaiyash](https://github.com/yahiyaiyash)
+
+- **BISHRU R. M.**
+  - *Role:* Supplier Order Management
+  - *GitHub:* [Bishru182](https://github.com/Bishru182)
+
+### Project Lead
+- **KUMARI M. A. D. N.**
+  - *Role:* Project Lead
+  - *GitHub:* [nadee2k](https://github.com/nadee2k)
 
 ## 🙏 Acknowledgments
 
