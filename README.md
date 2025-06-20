@@ -1,119 +1,123 @@
-# Backend API Service
+# 🚀 Alfa Hardware Store Management System – Backend API Service
 
-# Hardware Store Management System
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-Backend-brightgreen" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express.js-Framework-blue" alt="Express.js" />
+  <img src="https://img.shields.io/badge/MySQL-Database-orange" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Prisma-ORM-lightgrey" alt="Prisma" />
+  <img src="https://img.shields.io/github/license/Alfa-IT-Project/Backend" alt="License" />
+</p>
 
-A comprehensive enterprise management system for hardware stores, built with Node.js. This platform integrates multiple business components—such as inventory, suppliers, customers, delivery, and staff management—for seamless operations management.
+> **Next-Gen Enterprise Solution for Hardware Store Management**  
+> _Seamlessly manage your business with robust, scalable, and integrated features._
 
-## 🚀 Features
+---
 
-### User Management
-- Complete user authentication and authorization system
-- Role-based access control
-- User profile management
-- Password management and security features
+## 🏪 About the Project
 
-### Customer Relationship Management (CRM)
-- Customer data management
-- Customer interaction tracking
-- Customer history and preferences
-- Communication management
-- Customer feedback system
+A comprehensive enterprise management system for hardware stores, built with Node.js and a modular, scalable architecture. This all-in-one backend platform integrates every essential business component: **inventory, suppliers, customers, delivery, staff, and more** – all designed for modern business efficiency.
 
-### Inventory Management
-- Real-time stock tracking
-- Product categorization
-- Stock level alerts
-- Inventory valuation
-- Product lifecycle management
-- Barcode/QR code support
+---
 
-### Supplier Order Management
-- Supplier database management
-- Purchase order creation and tracking
-- Order status monitoring
-- Supplier performance metrics
-- Automated reorder points
-- Supplier communication system
+## 🎯 Core Features
 
-### Delivery Management
-- Delivery tracking system
-- Route optimization
-- Delivery status updates
-- Driver management
-- Delivery scheduling
-- Real-time delivery tracking
+### 👤 User Management
+- 🔒 Complete authentication & authorization (JWT)
+- 🛡️ Role-based access control
+- 👤 User profile & password management
 
-### Staff Management
-- Employee information management
-- Attendance tracking
-- Leave management
-- Performance monitoring
-- Payroll processing
-- Schedule management
-- Training and development tracking
+### 🤝 Customer Relationship Management (CRM)
+- 📋 Customer data & interaction history
+- ⭐ Preferences, feedback, and communication tracking
 
-## 🛠️ Tech Stack
+### 📦 Inventory Management
+- 📈 Real-time stock tracking with alerts
+- 🏷️ Product categories, valuation, and lifecycle
+- 🏷️ Barcode/QR code support
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MySQL
-- **ORM**: Prisma
-- **Authentication**: JWT (JSON Web Tokens)
-- **Email Service**: Nodemailer
-- **SMS Service**: Twilio
-- **Documentation**: Swagger UI
-- **Logging**: Winston
-- **PDF Generation**: PDFKit
+### 🛒 Supplier Order Management
+- 🗂️ Supplier database & order lifecycle
+- 📊 Performance metrics & automated reordering
 
-## 📋 Prerequisites
+### 🚚 Delivery Management
+- 🗺️ Route optimization & real-time tracking
+- 📦 Delivery and driver management
 
-- Node.js (Latest LTS version recommended)
+### 👩‍💼 Staff Management
+- 🕒 Attendance, leave, payroll, and performance tracking
+- 📅 Schedule & training management
+
+---
+
+## ⚙️ Tech Stack
+
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** MySQL
+- **ORM:** Prisma
+- **Authentication:** JWT
+- **Email:** Nodemailer
+- **SMS:** Twilio
+- **Docs:** Swagger UI
+- **Logging:** Winston
+- **PDF Generation:** PDFKit
+
+---
+
+## 🚦 Prerequisites
+
+- Node.js (Latest LTS)
 - MySQL Server
-- npm or yarn package manager
+- npm or yarn
 
-## 🔧 Installation
+---
 
-1. Clone the repository:
+## 🛠️ Quick Start
+
+1. **Clone the repository:**
    ```bash
    git clone [repository-url]
    cd Backend-1
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    cd src
    npm install
    ```
 
-3. Set up environment variables:
-   Create a `.env` file in the `src` directory with the following variables:
+3. **Set up environment variables:**  
+   Create `.env` in `src` with:
    ```
    DATABASE_URL=your_mysql_connection_string
    JWT_SECRET=your_jwt_secret
    PORT=4000
    ```
 
-4. Initialize the database:
+4. **Initialize the database:**
    ```bash
    npx prisma generate
    npx prisma db push
    ```
 
-## 🚀 Running the Application
+---
 
-1. Start the development server:
+## 🏃 Running the Application
+
+1. **Start the development server:**
    ```bash
    npm start
    ```
+2. Open in your browser: [http://localhost:4000](http://localhost:4000)
 
-2. The server will start running on `http://localhost:4000`
+---
 
-## 📚 API Documentation
+## 📖 Beautiful API Docs
 
-The API documentation is available through Swagger UI at:
-```
-http://localhost:4000/api-docs
-```
+Interactive API documentation is available through Swagger UI at:  
+[http://localhost:4000/api-docs](http://localhost:4000/api-docs)
+
+---
 
 ## 🗂️ Project Structure
 
@@ -122,121 +126,109 @@ src/
 ├── bin/              # Server startup scripts
 ├── controllers/      # Request handlers
 ├── middlewares/      # Custom middleware functions
-├── models/          # Database models
-├── routes/          # API route definitions
-├── routers/         # Additional route handlers
-├── service/         # Business logic layer
-├── utils/           # Utility functions
-├── prisma/          # Database schema and migrations
-├── app.js           # Main application file
-└── index.js         # Application entry point
+├── models/           # Database models
+├── routes/           # API route definitions
+├── routers/          # Additional route handlers
+├── service/          # Business logic layer
+├── utils/            # Utility functions
+├── prisma/           # DB schema & migrations
+├── app.js            # Main app file
+└── index.js          # Entry point
 ```
 
-## �� API Endpoints
+---
 
-### 1. User Management
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - Register new user (Admin only)
-- `POST /api/auth/validate` - Validate user existence
-- `GET /api/users` - Get all users
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
+## 🌐 API Endpoints at a Glance
 
-### 2. Customer Relationship Management (CRM)
-- `GET /customers/getCustomers` - Get all customers (General Manager only)
-- `POST /customers/addCustomer` - Add new customer (General Manager only)
-- `PUT /customers/:id/updateCustomer` - Update customer details
-- `DELETE /customers/:id/deleteCustomer` - Delete customer (General Manager only)
-- `GET /customers/getCustomersByTier/:tier` - Get customers by loyalty tier
-- `GET /rewards` - Get rewards program details
-- `POST /rewards` - Add new reward
-- `PUT /rewards/:id` - Update reward
-- `DELETE /rewards/:id` - Delete reward
+### 1️⃣ User Management
+- `POST /api/auth/login` – User login
+- `POST /api/auth/register` – Register new user (Admin only)
+- `POST /api/auth/validate` – Validate user existence
+- `GET /api/users` – Get all users
+- `GET /api/users/:id` – Get user by ID
+- `PUT /api/users/:id` – Update user
+- `DELETE /api/users/:id` – Delete user
 
-### 3. Inventory Management
-- `GET /hardware_inventory` - Get all inventory items
-- `POST /add_item` - Add new inventory item
-- `PUT /api/inventory/update/:id` - Update inventory item
-- `DELETE /api/inventory/delete/:id` - Delete inventory item
-- `GET /api/inventory/:id` - Get item by ID
-- `GET /api/pm-dashboard` - Get inventory dashboard statistics
+### 2️⃣ CRM
+- `GET /customers/getCustomers` – All customers (GM only)
+- `POST /customers/addCustomer` – Add customer (GM only)
+- `PUT /customers/:id/updateCustomer` – Update customer
+- `DELETE /customers/:id/deleteCustomer` – Delete customer (GM only)
+- `GET /customers/getCustomersByTier/:tier` – Customers by loyalty tier
+- `GET /rewards` / `POST /rewards` / `PUT /rewards/:id` / `DELETE /rewards/:id` – Rewards management
 
-### 4. Supplier Order Management
-- `GET /purchases` - Get all purchase orders
-- `POST /purchases` - Create new purchase order
-- `PUT /purchases/:id` - Update purchase order
-- `DELETE /purchases/:id` - Delete purchase order
-- `GET /purchases/supplier/:id` - Get orders by supplier
-- `GET /purchases/status/:status` - Get orders by status
+### 3️⃣ Inventory
+- `GET /hardware_inventory` – All inventory items
+- `POST /add_item` – Add inventory item
+- `PUT /api/inventory/update/:id` – Update item
+- `DELETE /api/inventory/delete/:id` – Delete item
+- `GET /api/inventory/:id` – Get item by ID
+- `GET /api/pm-dashboard` – Inventory stats
 
-### 5. Delivery Management
-- `GET /delivery/orders` - Get all delivery orders
-- `POST /delivery/orders` - Create new delivery order
-- `PUT /delivery/orders/:id` - Update delivery status
-- `GET /delivery/orders/:id` - Get delivery details
-- `GET /delivery/routes` - Get delivery routes
-- `POST /delivery/routes` - Create new delivery route
-- `PUT /delivery/routes/:id` - Update delivery route
+### 4️⃣ Supplier Orders
+- `GET /purchases` – All purchase orders
+- `POST /purchases` – Create purchase order
+- `PUT /purchases/:id` – Update order
+- `DELETE /purchases/:id` – Delete order
+- `GET /purchases/supplier/:id` – By supplier
+- `GET /purchases/status/:status` – By status
 
-### 6. Staff Management
-- `GET /api/attendance` - Get attendance records
-- `POST /api/attendance` - Record attendance
-- `GET /api/leaves` - Get leave requests
-- `POST /api/leaves` - Submit leave request
-- `GET /api/payroll` - Get payroll information
-- `GET /api/schedules` - Get employee schedules
-- `POST /api/schedules` - Create new schedule
-- `GET /api/performance` - Get performance records
-- `POST /api/performance` - Submit performance review
-- `GET /api/settings` - Get system settings
-- `PUT /api/settings` - Update system settings
+### 5️⃣ Delivery
+- `GET /delivery/orders` – All delivery orders
+- `POST /delivery/orders` – New delivery order
+- `PUT /delivery/orders/:id` – Update status
+- `GET /delivery/orders/:id` – Delivery details
+- `GET /delivery/routes` / `POST /delivery/routes` / `PUT /delivery/routes/:id` – Route management
 
-Note: All endpoints require authentication using JWT tokens. Some endpoints have role-based access control (RBAC) restrictions.
+### 6️⃣ Staff
+- `GET /api/attendance` / `POST /api/attendance` – Attendance
+- `GET /api/leaves` / `POST /api/leaves` – Leave requests
+- `GET /api/payroll` – Payroll info
+- `GET /api/schedules` / `POST /api/schedules` – Scheduling
+- `GET /api/performance` / `POST /api/performance` – Performance
+- `GET /api/settings` / `PUT /api/settings` – System settings
 
-## 🤝 Contributing
+> **Note:**  
+> All endpoints require JWT authentication. Many have role-based access (RBAC).
+
+---
+
+## 🤲 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create your branch: `git checkout -b feature/AmazingFeature`
+3. Commit: `git commit -m 'Add some AmazingFeature'`
+4. Push: `git push origin feature/AmazingFeature`
+5. Open a Pull Request 🚀
 
-## 📝 License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📄 License
 
-## 👥 Authors
+Licensed under the MIT License – see the LICENSE file for details.
 
-### Project Contributors
+---
 
-- **KUMARI M. A. D. N.** 
-  - *Role:* Login Part and Customer Relationship Management
-  - *GitHub:* [nadee2k](https://github.com/nadee2k)
+## 👥 Authors & Contributors
 
-- **KAPUWELLA K. G. N. D.**
-  - *Role:* Inventory Management
-  - *GitHub:* [NipunDemintha](https://github.com/NipunDemintha)
+| Name | Role | GitHub |
+|------|------|--------|
+| **KUMARI M. A. D. N.** | Login & CRM, Project Lead | [nadee2k](https://github.com/nadee2k) |
+| **KAPUWELLA K. G. N. D.** | Inventory Management | [NipunDemintha](https://github.com/NipunDemintha) |
+| **VITHANA Y. S. D.** | Staff Management | [diw-666](https://github.com/diw-666) |
+| **AYYASH M. R. Y.** | Delivery Management | [yahiyaiyash](https://github.com/yahiyaiyash) |
+| **BISHRU R. M.** | Supplier Orders | [Bishru182](https://github.com/Bishru182) |
 
-- **VITHANA Y. S. D.**
-  - *Role:* Staff Management
-  - *GitHub:* [diw-666](https://github.com/diw-666)
+---
 
-- **AYYASH M. R. Y.**
-  - *Role:* Delivery Management
-  - *GitHub:* [yahiyaiyash](https://github.com/yahiyaiyash)
-
-- **BISHRU R. M.**
-  - *Role:* Supplier Order Management
-  - *GitHub:* [Bishru182](https://github.com/Bishru182)
-
-### Project Lead
-- **KUMARI M. A. D. N.**
-  - *Role:* Project Lead
-  - *GitHub:* [nadee2k](https://github.com/nadee2k)
-
-## 🙏 Acknowledgments
+## 🌟 Acknowledgments
 
 - Express.js team for the amazing framework
 - Prisma team for the excellent ORM
 - All contributors who have helped shape this project
+
+---
+
+<p align="center">
+  <b>🚀 Transforming hardware retail, one API at a time!</b>
+</p>
